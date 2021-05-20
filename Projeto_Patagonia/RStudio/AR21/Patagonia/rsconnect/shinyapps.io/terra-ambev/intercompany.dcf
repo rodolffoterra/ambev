@@ -1,0 +1,14 @@
+name: intercompany
+title: intercompany
+username:
+account: terra-ambev
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4127473
+bundleId: 4617449
+url: https://terra-ambev.shinyapps.io/intercompany/
+when: 1621452856.02734
+lastSyncTime: 1621452856.02734
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: AR21.xlsx

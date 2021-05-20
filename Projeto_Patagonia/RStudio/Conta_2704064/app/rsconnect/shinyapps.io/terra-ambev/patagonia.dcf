@@ -1,0 +1,13 @@
+name: patagonia
+title: patagonia
+username:
+account: terra-ambev
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4159009
+bundleId: 4619845
+url: https://terra-ambev.shinyapps.io/patagonia/
+when: 1621510932.21249
+lastSyncTime: 1621510932.21249
+asMultiple: FALSE
+asStatic: FALSE

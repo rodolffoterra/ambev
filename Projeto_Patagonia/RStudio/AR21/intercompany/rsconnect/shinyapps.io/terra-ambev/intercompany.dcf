@@ -5,10 +5,10 @@ account: terra-ambev
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4127473
-bundleId: 4595923
+bundleId: 4617437
 url: https://terra-ambev.shinyapps.io/intercompany/
-when: 1620941618.55895
-lastSyncTime: 1620941618.55895
+when: 1621452569.52156
+lastSyncTime: 1621452569.52156
 asMultiple: FALSE
 asStatic: FALSE
 ignoredFiles: AR21.xlsx

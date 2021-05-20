@@ -2,7 +2,7 @@
 #     Server    #
 # # # # # # # # # 
 
-# Project: filter SQL
+# Project: Mercado pago
 
 # Company: Ambev
 
@@ -21,8 +21,10 @@ server <- function(input, output) {
   
   values <- reactiveValues()
   
+  
+  # Page 1 - Intercompany----
 
-  output$contents <- renderTable({
+  output$tableIntercompany<- renderTable({
     
  
     file <- input$file1
@@ -80,29 +82,76 @@ server <- function(input, output) {
     
     # 4.4 Day----
     
+    df$day <- str_sub(df$Texto_01, start = str_locate(df$Texto_01, "D202")-5, end = (str_locate(df$Texto_01, "D202")[2]-6))
     
-    df$texto_02<- df$Texto_01
+    df$day<- gsub("[áéíóúãiõâêîôû]","",df$day)
     
-    df$texto_02<- gsub("D","",df$texto_02)
+    df$day <- ifelse(str_sub(df$day, start = 0, end = 1) =="D",str_sub(df$day, start = 2, end = str_count(df$day)),
+                     df$day)
     
-    df$day <- str_sub(df$texto_02, start= str_count(df$texto_02)-7,
-                        end = str_count(df$texto_02))
+    df <- df %>%
+      separate(day, into = c("day"), sep = "D")
     
-    df$day_01 <- str_sub(df$day, start= 0,
-                           end = 2)
+    df$day <- as.integer(df$day)
     
-    df$day_01<- gsub("[áéíóúãiõâêîôû]","0",df$day_01)
+    df <- df %>%
+      mutate(day_01 = ifelse(day > 31, 
+                             day/10,
+                             day))
     
-    #df$day_01 <- str_sub(df$day_01, start= 2,
-    #                       end = 2)
+    df$day_01[is.na(df$day_01)] = 0
+    df$day[is.na(df$day)] = 0
+    
+    
+    df$day_01<- ifelse(df$day - df$day_01 == 0, df$day_01,
+                       (df$day_01 - as.integer(df$day_01))*10)
+    
+    df$day_01 <- as.integer(df$day_01)
+    
+    df$day_01 <- ifelse(df$day_01 == 0, 1, df$day_01)
     
     
     # 4.5 df----
     
-    
     df <- df %>%
       mutate(Data = ifelse(is.na(Year),"Sem Vencimento",
-                           paste0(day_01,"/",month_01, "/", Year)))
+                           ifelse(month_01 <= 12,
+                                  paste0(day_01,"/",as.character(month_01), "/", Year),
+                                  paste0(month_01,"/",day_01, "/", Year))))
+    
+    
+    df<- df %>%
+      separate(Data, into = c('d',"m",'y' ), sep = "[/]")
+    
+    df$d <- ifelse(df1$d == "1","01",
+                   ifelse(df1$d == "2","02",
+                          ifelse(df1$d == "3","03",
+                                 ifelse(df1$d == "4","04",
+                                        ifelse(df1$d == "5","05",
+                                               ifelse(df1$d == "6","06",
+                                                      ifelse(df1$d == "7","07",
+                                                             ifelse(df1$d == "8","08",
+                                                                    ifelse(df1$d == "9","09",df1$d)))))))))
+    
+    df$m <- ifelse(df1$m == "1","01",
+                   ifelse(df1$m == "2","02",
+                          ifelse(df1$m == "3","03",
+                                 ifelse(df1$m == "4","04",
+                                        ifelse(df1$m == "5","05",
+                                               ifelse(df1$m == "6","06",
+                                                      ifelse(df1$m == "7","07",
+                                                             ifelse(df1$m == "8","08",
+                                                                    ifelse(df1$m == "9","09",df1$m)))))))))
+    
+    
+    df$Data <- ifelse(is.na(df$Year),"Sem Vencimento",
+                      paste0(df$d,"/",df$m,"/",df$y))
+    
+    
+    #df<- df %>%
+    #  mutate(day = str_sub(Texto_01, end = str_locate(Texto_01, "D202")[2]+1))
+    
+    
     
     # 5.0 Remove Columns----
     
@@ -114,6 +163,9 @@ server <- function(input, output) {
     df$texto_02 <- NULL
     df$day <- NULL
     df$day_01 <- NULL
+    df$d<- NULL
+    df$m <- NULL
+    df$y <- NULL
     
     df$Id <- c(5:row)
     
@@ -130,7 +182,7 @@ server <- function(input, output) {
   })
   
 
-  output$downloadData <- downloadHandler(
+  output$downloadDatainter<- downloadHandler(
     filename = function() {
       paste("Intercompany-", Sys.Date(), ".xlsx", sep="")
     },
@@ -140,6 +192,90 @@ server <- function(input, output) {
   )
   
 
+  
+  # Page 2 - Mercado Pago----
+  
+
+    
+  output$tablemp<- renderTable({
+    
+    
+    file_mp <- input$file2
+    ext <- tools::file_ext(file_mp$datapath)
+    
+    req(file_mp)
+    validate(need(ext == "zip", "Please upload a .zip file"))
+    
+    df_sql <- read_excel(unzip(file_mp$datapath))
+    
+    # 3.0 Data Cleaning---
+    
+    df_sql$Importe <- as.numeric(df_sql$Importe) # Converte Columns in numeric
+    
+    df_sql$`Tipo de Operación`<- stringr::str_to_lower(df_sql$`Tipo de Operación`) # Converte all Sentence in lower 
+    
+    
+    df_sql$`Tipo de Operación`<- gsub("anulación parcial de ","", df_sql$`Tipo de Operación`) # remove string in anyone
+    df_sql$`Tipo de Operación`<- gsub("anulación de ","", df_sql$`Tipo de Operación`)
+    df_sql$`Tipo de Operación`<- gsub("devolución parcial de ","", df_sql$`Tipo de Operación`)
+    df_sql$`Tipo de Operación`<- gsub("devolución de ","", df_sql$`Tipo de Operación`)
+    df_sql$`Tipo de Operación`<- gsub("movimiento general","retención impuesto al valor agregado", df_sql$`Tipo de Operación`)
+    df_sql$`Tipo de Operación`<- gsub("percepción general impuesto al valor agregado","retención impuesto al valor agregado", 
+                                  df_sql$`Tipo de Operación`) #Remove string in other string
+    
+    
+    # 4.0 SQL---
+    
+    df_sql <- df_sql %>%
+      group_by(`Tipo de Operación`) %>%
+      summarise(n = sum(Importe))
+    
+    colnames(df_sql) <- c("Etiquetas de Fila",
+                          "Suma de Importe")
+    
+    values$c <- df_sql
+    
+    
+  })
+  
+
+  
+
+  
+  #ifelse(input$radio == "Intercompany",
+  #View(values$a),
+  #print(values$b))
+  
+
+
+output$downloadmp<- downloadHandler(
+  filename = function() {
+    paste("Mercado_Pago", Sys.Date(), ".xlsx", sep="")
+  },
+  content = function(file2) {
+    write.xlsx(values$c, file2
+               )
+  }
+)
+  
+  
+  
+output$tablesum<- renderTable({
+  
+  req(values$c)
+  
+  Sum_df <- data.frame(Soma= "Total general",
+             Valores = sum(values$c$`Suma de Importe`))
+})
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
 }
