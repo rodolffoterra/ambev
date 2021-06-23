@@ -16,7 +16,7 @@ end_date <- '17-04-2021'
 
 # ICG
 
-# HigienizaÇÃO no banco de dados
+# Higieniza??O no banco de dados
 icg <- icg %>%
   separate(Fecha, into = c('m','d','y'), sep = "[/]")
 
@@ -49,7 +49,7 @@ df_bariloche<- bariloche(path = path, file = file)
 
 df_bariloche <- subset(df_bariloche, FECHA <= end_date & FECHA >= start_date)
 
-bar_targeta <- df_bariloche %>%
+targeta <- df_bariloche %>%
   gather( targeta, valor, "VISA DEBITO":"OTRAS") %>%
   summarise(sum(as.numeric(valor)))
 

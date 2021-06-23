@@ -20,6 +20,7 @@ library('readxl')
 library('tidyverse')
 library('xlsx')
 library('RTerra')
+library('tcltk')
 
 # 2.0 Information----
 
@@ -33,6 +34,11 @@ end_date <- '17/04/2021'
 # 3.0 Database----
 
 # Data Frame Bariloche
+
+
+macro <- function() {
+start.time <- Sys.time()
+
 df_all <- data.frame(matrix(nrow = 1, ncol = 38))
 colnames(df_all) <- paste0('x',rep(1:38))
 df_all <- df_all[-1,]
@@ -54,7 +60,7 @@ for ( k in 1:length(path)){
 }
 
 
-icg <- read_excel("Fontes/Iva ventas.xlsx")
+icg <- read_excel("Fontes/Iva ventas.xlsx", sheet = 1)
 
 icg <- merge(x = icg, y = cajas, by.x = 'Caja',
              by.y  = 'Caja', all.x = TRUE)
@@ -240,7 +246,7 @@ for (w in 1:length(columns)){
 
 
 
-cruzada <- bar_iva + bar_imp_int + bar_venta - bar_targeta - bar_MP - bar_efetivo_real - bar_rappi - bar_rappi_efetivo - bar_ya - bar_ya_efetivo
+cruzada <- iva +imp_int +venta - targeta - MP - efetivo_real - rappi - rappi_efetivo - ya - ya_efetivo
 cruzada <- 0
 
 if(cruzada < 0){
@@ -344,7 +350,7 @@ for (w in 1:length(columns)){
 }
 
 
-cruzada <- s_lp_iva + s_lp_imp_int + s_lp_venta - s_lp_targeta - s_lp_MP - s_lp_efetivo_real - s_lp_rappi - s_lp_rappi_efetivo - s_lp_ya - s_lp_ya_efetivo
+cruzada <- iva +imp_int +venta - targeta - MP - efetivo_real - rappi - rappi_efetivo - ya - ya_efetivo
 
 if(cruzada < 0){
   cont_vend_s_lp[nrow(cont_vend_s_lp)-1,"Ipte Mon Doc"] <- cruzada
@@ -397,7 +403,7 @@ for (w in 1:length(columns)){
   cont_vend_s_vc[w,"Ipte Mon Doc"] <- columns[w]
   }
 
-cruzada <- s_vc_iva + s_vc_imp_int + s_vc_venta - s_vc_targeta - s_vc_MP - s_vc_efetivo_real - s_vc_rappi - s_vc_rappi_efetivo - s_vc_ya - s_vc_ya_efetivo
+cruzada <- iva +imp_int +venta - targeta - MP - efetivo_real - rappi - rappi_efetivo - ya - ya_efetivo
 
 if(cruzada < 0){
   cont_vend_s_vc[nrow(cont_vend_s_vc)-1,"Ipte Mon Doc"] <- cruzada
@@ -418,7 +424,9 @@ if(cruzada > 0){
 
 # 6.0 Macro----
 
-macro <- rbind(filter(cont_vend_b, `Ipte Mon Doc` !=0), filter(cont_vend_s_lp, `Ipte Mon Doc` !=0),filter(cont_vend_s_vc, `Ipte Mon Doc` !=0))
+macro <- filter(cont_vend_b, `Ipte Mon Doc` !=0)
+macro <- rbind(macro, filter(cont_vend_s_lp, `Ipte Mon Doc` !=0))
+macro <- rbind(macro, filter(cont_vend_s_vc, `Ipte Mon Doc` !=0))
 
 
 macro$`Clase Mov` <- rep("CU",nrow(macro))
@@ -443,16 +451,7 @@ df_stella_vc <- to.numeric(df_stella_vc,variables = col_numeric)
 
 # 7.0 download
 
-file <- paste0(getwd(),'_',format(Sys.Date(), "%d_%m_%Y"),'.xlsx')
-
-sheet <-c("ICG","Macro",'cv_Bar','cv_S_LP','cv_S_CV', 'Bariloche','StellaLP','StellaVC') 
-names_table <- c(icg, macro, cont_vend_b,cont_vend_s_lp,cont_vend_s_vc,df_bariloche,df_stella_lp, df_stella_vc) 
-
-for (p in 1:length(sheet)){
-  
-  write.xlsx(names_table[p], file = file, sheetName = sheet[p], append = TRUE)
-  
-}
+file <- paste0(getwd(),'/Vendas_',format(Sys.Date(), "%d_%m_%Y"),'.xlsx')
 
 write.xlsx(icg, file = file, sheetName = "ICG", append = TRUE)
 write.xlsx(macro, file = file, sheetName = "macro", append = TRUE)
@@ -464,11 +463,20 @@ write.xlsx(df_stella_lp, file = file, sheetName = "StellaLP", append = TRUE)
 write.xlsx(df_stella_vc, file = file, sheetName = "StellaVC", append = TRUE)
 
 
+end.time <- Sys.time()
+tkmessageBox(title = "Projeto Patagonia",
+             message = paste0("Tempo de Duração: ",
+                              round((end.time - start.time),digits = 2),' seg.'), icon = "info", type = "ok")
+}
 
 
+if(sum(str_count(paste0(getwd(),'/Vendas_',format(Sys.Date(), "%d_%m_%Y"),'.xlsx'), dir("../Version_1"))) > 0) {
 
-
-
+  file.remove(paste0(getwd(),'/Vendas_',format(Sys.Date(), "%d_%m_%Y"),'.xlsx'))
+  macro()
+  } else{
+    macro()
+   }
 
 
 
